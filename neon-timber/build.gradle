@@ -1,0 +1,58 @@
+plugins {
+    id "com.android.library"
+    id "org.jetbrains.kotlin.android"
+    id "com.github.technoir42.aar-publish" version "1.0.2"
+    id "maven-publish"
+    id "com.jfrog.bintray"
+}
+
+android {
+    compileSdkVersion 28
+
+    defaultConfig {
+        minSdkVersion 14
+        targetSdkVersion 28
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    sourceSets {
+        main.java.srcDirs += "src/main/kotlin"
+    }
+
+    libraryVariants.all {
+        it.generateBuildConfigProvider.configure { enabled = false }
+    }
+}
+
+dependencies {
+    implementation project(":neon")
+    implementation "com.jakewharton.timber:timber:$versions.timber"
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.android
+        }
+    }
+}
+
+bintray {
+    user = findProperty("BINTRAY_USER")
+    key = findProperty("BINTRAY_KEY")
+    publish = true
+    pkg {
+        repo = "maven"
+        name = "neon"
+        licenses = ["Apache-2.0"]
+        vcsUrl = "https://github.com/technoir42/neon.git"
+        version {
+            name = project.version
+        }
+        publications = ["maven"]
+    }
+}

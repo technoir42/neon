@@ -1,0 +1,62 @@
+plugins {
+    id "org.jetbrains.kotlin.jvm"
+    id "maven-publish"
+    id "com.jfrog.bintray"
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$versions.kotlin"
+    api "io.reactivex.rxjava2:rxjava:$versions.rxjava"
+    api "com.sch.rxjava:rxjava2-extensions:$versions.rxjava2Extensions"
+
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$versions.junit.jupiter"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$versions.junit.jupiter"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:$versions.junit.platform"
+    testImplementation "org.assertj:assertj-core:$versions.assertj"
+}
+
+test {
+    useJUnitPlatform()
+}
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allJava
+    archiveClassifier = "sources"
+}
+
+task javadocJar(type: Jar) {
+    from javadoc
+    archiveClassifier = "javadoc"
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
+        }
+    }
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+
+bintray {
+    user = findProperty("BINTRAY_USER")
+    key = findProperty("BINTRAY_KEY")
+    publish = true
+    pkg {
+        repo = "maven"
+        name = "neon"
+        licenses = ["Apache-2.0"]
+        vcsUrl = "https://github.com/technoir42/neon.git"
+        version {
+            name = project.version
+        }
+        publications = ["maven"]
+    }
+}
