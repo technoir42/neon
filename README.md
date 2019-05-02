@@ -11,8 +11,8 @@ repositories {
 }
 
 dependencies {
-    implementation "com.sch.neon:neon:0.9.0"
-    implementation "com.sch.neon:neon-timber:0.9.0"
+    implementation "com.sch.neon:neon:0.10.0"
+    implementation "com.sch.neon:neon-timber:0.10.0"
 }
 ```
 

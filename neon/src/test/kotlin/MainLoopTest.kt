@@ -3,28 +3,23 @@ package com.sch.neon
 import com.sch.neon.TestEffect.FirstEffect
 import com.sch.neon.TestEvent.FirstEvent
 import com.sch.neon.TestEvent.SecondEvent
-import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
-import io.reactivex.subjects.ReplaySubject
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import java.util.concurrent.ConcurrentLinkedQueue
 
 @ExtendWith(RxSchedulersOverrideExtension::class)
 class MainLoopTest {
+    private val stateReducer = TestStateReducer()
+    private val effectHandler = TestEffectHandler()
     private val inputEvents = PublishSubject.create<TestEvent>()
-    private val effects = ReplaySubject.create<TestEffect>()
-    private val effectHandlerEvents = PublishSubject.create<TestEvent>()
     private val listener = TestListener()
 
     private val loop = MainLoop(
-        reducer = TestStateReducer(),
+        reducer = stateReducer,
+        effectHandler = effectHandler,
         externalEvents = inputEvents,
-        effectHandler = ::effectHandler,
         listener = listener
     )
 
@@ -44,7 +39,9 @@ class MainLoopTest {
 
         state.test()
 
-        assertThat(effects.values).containsExactly(initialEffect1, initialEffect2)
+        effectHandler.effects
+            .test()
+            .assertValues(initialEffect1, initialEffect2)
     }
 
     @Test
@@ -108,59 +105,34 @@ class MainLoopTest {
         state.test()
 
         assertTrue(inputEvents.hasObservers())
-        assertTrue(effectHandlerEvents.hasObservers())
+        assertTrue(effectHandler.events.hasObservers())
 
         state.dispose()
 
         assertFalse(inputEvents.hasObservers())
-        assertFalse(effectHandlerEvents.hasObservers())
+        assertFalse(effectHandler.events.hasObservers())
     }
 
-    private fun effectHandler(effects: Observable<TestEffect>): Observable<TestEvent> {
-        effects.subscribe(this.effects)
-        return effectHandlerEvents
-    }
-}
+    @Test
+    fun `Dispatches effects from reducer to effect handler`() {
+        loop.loop(TestViewState(1)).test()
 
-private sealed class TestEvent : Event() {
-    data class FirstEvent(val counter: Int) : TestEvent()
-    object SecondEvent : TestEvent()
-}
+        loop.dispatch(SecondEvent)
 
-private sealed class TestEffect : Effect() {
-    data class FirstEffect(val counter: Int) : TestEffect()
-}
-
-private data class TestViewState(
-    val counter: Int = 0
-)
-
-private class TestStateReducer : StateReducer<TestEvent, TestViewState, TestEffect> {
-    override fun reduce(state: TestViewState, event: TestEvent): StateWithEffects<TestViewState, TestEffect> = when (event) {
-        is FirstEvent -> {
-            next(state.copy(counter = event.counter))
-        }
-
-        SecondEvent -> {
-            next(state, FirstEffect(state.counter))
-        }
-    }
-}
-
-private class TestListener : MainLoop.Listener<Any, Any, Any> {
-    val events = ConcurrentLinkedQueue<Any>()
-    val states = ConcurrentLinkedQueue<Any>()
-    val effects = ConcurrentLinkedQueue<Any>()
-
-    override fun onEvent(event: Any) {
-        events += event
+        effectHandler.effects
+            .test()
+            .assertValues(FirstEffect(1))
     }
 
-    override fun onState(state: Any) {
-        states += state
-    }
+    @Test
+    fun `Dispatches events from effect handler to reducer`() {
+        val ts = loop.loop(TestViewState()).test()
 
-    override fun onEffect(effect: Any) {
-        effects += effect
+        effectHandler.events.onNext(FirstEvent(1))
+
+        ts.assertValues(
+            TestViewState(),
+            TestViewState(1)
+        )
     }
 }

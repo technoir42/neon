@@ -20,11 +20,13 @@ interface StateReducer<Event : Any, State : Any, Effect : Any> {
     fun reduce(state: State, event: Event): StateWithEffects<State, Effect>
 }
 
-typealias EffectHandler<Effect, Event> = (effects: Observable<Effect>) -> Observable<Event>
+interface EffectHandler<Effect : Any, Event : Any> {
+    fun handle(effects: Observable<Effect>): Observable<Event>
+}
 
 class MainLoop<Event : Any, State : Any, Effect : Any>(
     private val reducer: StateReducer<Event, State, Effect>,
-    private val effectHandler: EffectHandler<Effect, Event> = { Observable.empty() },
+    private val effectHandler: EffectHandler<Effect, Event>? = null,
     private val externalEvents: Observable<out Event> = Observable.empty(),
     private val listener: Listener<Event, State, Effect>? = null
 ) {
@@ -42,15 +44,17 @@ class MainLoop<Event : Any, State : Any, Effect : Any>(
     fun loop(initialStateAndEffects: StateWithEffects<State, Effect>): DisposableObservable<State> {
         val effectHandlerEvents = effects
             .observeOn(Schedulers.io())
-            .doOnNext { effect -> listener?.onEffect(effect) }
-            .publish { effects -> effectHandler(effects) }
+            .publish { effects -> effectHandler?.handle(effects) ?: Observable.never() }
 
         return Observable.merge(events, externalEvents, effectHandlerEvents)
             .observeOn(Schedulers.computation())
             .doOnNext { event -> listener?.onEvent(event) }
             .scan(initialStateAndEffects) { stateWithEffects, event -> reducer.reduce(stateWithEffects.state, event) }
             .map { stateWithEffects ->
-                stateWithEffects.effects.forEach { effect -> effects.onNext(effect) }
+                stateWithEffects.effects.forEach { effect ->
+                    listener?.onEffect(effect)
+                    effects.onNext(effect)
+                }
                 stateWithEffects.state
             }
             .distinctUntilChanged()
