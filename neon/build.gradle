@@ -13,6 +13,7 @@ dependencies {
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$versions.junit.jupiter"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher:$versions.junit.platform"
     testImplementation "org.assertj:assertj-core:$versions.assertj"
+    testImplementation "com.github.technoir42:rxjava2-junit5:$versions.rxjava2junit5"
 }
 
 test {

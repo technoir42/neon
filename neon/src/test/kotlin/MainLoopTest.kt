@@ -1,5 +1,6 @@
 package com.sch.neon
 
+import com.github.technoir42.rxjava2.junit5.OverrideSchedulersExtension
 import com.sch.neon.TestEffect.FirstEffect
 import com.sch.neon.TestEvent.FirstEvent
 import com.sch.neon.TestEvent.SecondEvent
@@ -9,7 +10,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 
-@ExtendWith(RxSchedulersOverrideExtension::class)
+@ExtendWith(OverrideSchedulersExtension::class)
 class MainLoopTest {
     private val stateReducer = TestStateReducer()
     private val effectHandler = TestEffectHandler()

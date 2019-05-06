@@ -39,5 +39,6 @@ ext.versions = [
         platform: "1.4.2",
     ],
 
-    assertj          : "3.12.2"
+    assertj          : "3.12.2",
+    rxjava2junit5    : "1.0.0",
 ]
