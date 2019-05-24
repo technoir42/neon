@@ -1,5 +1,3 @@
-@file:Suppress("NOTHING_TO_INLINE")
-
 package com.sch.neon
 
 import com.sch.rxjava2.extensions.DisposableObservable
@@ -7,22 +5,6 @@ import com.sch.rxjava2.extensions.autoConnectDisposable
 import io.reactivex.Observable
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.UnicastSubject
-
-data class StateWithEffects<out State : Any, out Effect : Any>(
-    val state: State,
-    val effects: List<Effect>
-)
-
-inline fun <State : Any, Effect : Any> next(state: State, vararg effects: Effect): StateWithEffects<State, Effect> =
-    StateWithEffects(state, effects.toList())
-
-interface StateReducer<Event : Any, State : Any, Effect : Any> {
-    fun reduce(state: State, event: Event): StateWithEffects<State, Effect>
-}
-
-interface EffectHandler<Effect : Any, Event : Any> {
-    fun handle(effects: Observable<Effect>): Observable<Event>
-}
 
 class MainLoop<Event : Any, State : Any, Effect : Any>(
     private val reducer: StateReducer<Event, State, Effect>,
@@ -73,21 +55,17 @@ class MainLoop<Event : Any, State : Any, Effect : Any>(
 }
 
 fun <Event : Any, State : Any, Effect : Any> compose(vararg listeners: MainLoop.Listener<Event, State, Effect>): MainLoop.Listener<Event, State, Effect> {
-    return CompositeListener(listeners)
-}
+    return object : MainLoop.Listener<Event, State, Effect> {
+        override fun onEvent(event: Event) {
+            listeners.forEach { it.onEvent(event) }
+        }
 
-private class CompositeListener<in Event : Any, in State : Any, in Effect : Any>(
-    private val listeners: Array<out MainLoop.Listener<Event, State, Effect>>
-) : MainLoop.Listener<Event, State, Effect> {
-    override fun onEvent(event: Event) {
-        listeners.forEach { it.onEvent(event) }
-    }
+        override fun onState(state: State) {
+            listeners.forEach { it.onState(state) }
+        }
 
-    override fun onState(state: State) {
-        listeners.forEach { it.onState(state) }
-    }
-
-    override fun onEffect(effect: Effect) {
-        listeners.forEach { it.onEffect(effect) }
+        override fun onEffect(effect: Effect) {
+            listeners.forEach { it.onEffect(effect) }
+        }
     }
 }
