@@ -1,7 +1,7 @@
 package com.sch.neon
 
-import com.sch.rxjava2.extensions.DisposableObservable
-import com.sch.rxjava2.extensions.autoConnectDisposable
+import com.github.technoir42.rxjava2.extensions.DisposableObservable
+import com.github.technoir42.rxjava2.extensions.autoConnectDisposable
 import io.reactivex.Observable
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.UnicastSubject
