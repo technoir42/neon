@@ -5,7 +5,7 @@ plugins {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$versions.kotlin"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
     api "io.reactivex.rxjava2:rxjava:$versions.rxjava"
     api "com.github.technoir42:rxjava2-extensions:$versions.rxjava2extensions"
 
